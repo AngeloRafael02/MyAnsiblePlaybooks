@@ -1,0 +1,45 @@
+---
+- name: Synchronize time on Linux servers with control machine
+  hosts: myhosts # Replace with your actual inventory group (e.g., servers, webservers, etc.)
+  become: yes              # This playbook requires root privileges to change the system time
+
+  vars:
+    control_machine_timestamp: "" # This variable will store the timestamp from the control machine
+
+  tasks:
+    - name: Get current date and time from the Ansible control machine
+      delegate_to: localhost # Run this task on the control machine
+      command: date "+%b %d %Y %H:%M:%S"
+      register: current_time_result
+      changed_when: false # This task doesn't change anything on the control machine
+
+    - name: Set control_machine_timestamp variable
+      set_fact:
+        control_machine_timestamp: "{{ current_time_result.stdout }}"
+
+    - name: Display the timestamp from the control machine (for verification)
+      debug:
+        msg: "Control machine current time: {{ control_machine_timestamp }}"
+
+    - name: Set system date and time on remote server
+      command: "date -s \"{{ control_machine_timestamp }}\""
+      args:
+        creates: /tmp/time_set_marker # Prevent re-running if a marker file exists (optional, for idempotence)
+      # Ensure that the previous command actually created the file:
+      # If `creates` is not enough, you might want to add a `stat` module check
+      # or just remove `creates` if you want it to run every time.
+      # For time sync, running every time is usually acceptable.
+
+    - name: Verify date and time on remote server
+      command: date
+      register: remote_time_check
+      changed_when: false
+
+    - name: Display remote server current time
+      debug:
+        msg: "Remote server current time after sync: {{ remote_time_check.stdout }}"
+
+    - name: Synchronize hardware clock with system time (optional, but recommended)
+      command: hwclock -w
+      when: ansible_os_family == "RedHat" or ansible_os_family == "Debian" # Only run on relevant OS families
+      # Add more specific checks if needed (e.g., based on presence of hwclock)

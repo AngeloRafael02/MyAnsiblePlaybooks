@@ -1,0 +1,11 @@
+- name: Show Time of Hosts
+  hosts: myhosts
+  become: true 
+  tasks:
+    - name: Get system time
+      shell: date '+%Y-%m-%d %H:%M:%S' 
+      register: system_time
+
+    - name: Display system time
+      debug: 
+        msg: "System time: {{ system_time.stdout }}" 
