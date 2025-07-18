@@ -1,0 +1,26 @@
+---
+- name: Shutdown all servers
+  hosts: myhosts
+  become: yes 
+
+  tasks:
+    - name: Shutdown server
+      ansible.builtin.command: /sbin/shutdown -h now
+      # You can use 'reboot' instead of 'shutdown -h now' if you want to reboot the servers
+      # ansible.builtin.command: /sbin/reboot
+
+      # You might want to add a prompt or confirmation here to prevent accidental shutdowns
+      # For example, using 'ansible.builtin.pause' or a custom variable check
+
+      # You can also use 'ansible.builtin.systemd' module for systemd-enabled systems:
+      # - name: Shutdown server (systemd)
+      #   ansible.builtin.systemd:
+      #     name: shutdown.target
+      #     state: stopped
+      #     daemon_reload: yes # Might be useful in some cases, but generally not for simple shutdown
+      #   when: ansible_service_mgr == "systemd"
+
+      # And for sysvinit systems:
+      # - name: Shutdown server (sysvinit)
+      #   ansible.builtin.command: /sbin/shutdown -h now
+      #   when: ansible_service_mgr == "sysvinit"
